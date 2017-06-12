@@ -4,6 +4,8 @@
 //
 
 #include "stdafx.h"
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include "CNTKLibrary.h"
 #include "Common.h"
 #include <functional>
@@ -184,6 +186,50 @@ void TestSparseCSCArrayView(size_t numAxes, const DeviceDescriptor& device)
     BOOST_TEST(copiedDenseData == referenceDenseData, "The contents of the dense vector that the sparse NDArrayView is copied into do not match the expected values");
 }
 
+template <typename ElementType>
+void TestSparseCSCDataBuffers(size_t numAxes, const DeviceDescriptor& device)
+{
+    srand(1);
+
+    size_t maxDimSize = 15;
+    NDShape viewShape(numAxes);
+    for (size_t i = 0; i < numAxes; ++i)
+        viewShape[i] = (rand() % maxDimSize) + 1;
+
+    size_t numMatrixCols = (numAxes > 0) ? viewShape.SubShape(1).TotalSize() : 1;
+    size_t numMatrixRows = (numAxes > 0) ? viewShape[0] : 1;
+
+    std::vector<ElementType> referenceDenseData;
+    std::vector<SparseIndexType> expectedColsStarts;
+    std::vector<SparseIndexType> expectedRowIndices;
+    std::vector<ElementType> expectedNonZeroValues;
+    size_t expectedNumNonZeroValues;
+    std::tie(referenceDenseData, expectedColsStarts, expectedRowIndices, expectedNonZeroValues, expectedNumNonZeroValues) = GenerateSequenceInCSC<ElementType>(numMatrixRows, numMatrixCols);
+
+    NDArrayView sparseCSCArrayView(viewShape, expectedColsStarts.data(), expectedRowIndices.data(), expectedNonZeroValues.data(), expectedNumNonZeroValues, device, true);
+
+    // Copy it out to a dense matrix on the CPU and verify the data
+    const ElementType *outputNonZeroData;
+    const SparseIndexType *outputColsStartsData;
+    const SparseIndexType *outputRowIndicesData;
+    size_t outputNumNonZeroData;
+    std::tie(outputNonZeroData, outputColsStartsData, outputRowIndicesData, outputNumNonZeroData) = sparseCSCArrayView.SparseCSCDataBuffers<ElementType>();
+
+    if (expectedNumNonZeroValues != outputNumNonZeroData)
+        ReportFailure("The number of non-zero values does not match. expected: %" PRIu64 ", actual %" PRIu64 "\n", expectedNumNonZeroValues, outputNumNonZeroData);
+    if (expectedNonZeroValues.size() != outputNumNonZeroData)
+        ReportFailure("The number of non-zero values returned does not match that in the non-zero value buffers. expected: %" PRIu64 ", actual %" PRIu64 "\n", expectedNonZeroValues.size(), outputNumNonZeroData);
+    for (size_t i = 0; i < expectedNonZeroValues.size(); i++)
+        if (expectedNonZeroValues[i] != outputNonZeroData[i])
+            ReportFailure("The non-zero value at position %" PRIu64 " does not match, expected: %f, actual: %f\n", i, expectedNonZeroValues[i] , outputNonZeroData[i]);
+    for (size_t i=0; i < expectedColsStarts.size(); i++)
+        if (expectedColsStarts[i] != outputColsStartsData[i])
+            ReportFailure("The ColsStarts at position %" PRIu64 " does not match, expected: %f, actual: %f\n", i, expectedColsStarts[i], outputColsStartsData[i]);
+    for (size_t i = 0; i < expectedRowIndices.size(); i++)
+        if (expectedRowIndices[i] != outputRowIndicesData[i])
+            ReportFailure("The RowIndices at position %" PRIu64 " does not match, expected: %f, actual: %f\n", i, expectedRowIndices[i], outputRowIndicesData[i]);
+}
+
 BOOST_AUTO_TEST_SUITE(NDArrayViewSuite)
 
 BOOST_AUTO_TEST_CASE(CheckFloatNDArrayViewInCpu)
@@ -214,6 +260,21 @@ BOOST_AUTO_TEST_CASE(CheckCscArrayViewInCpu)
 {
     if (ShouldRunOnCpu())
         TestSparseCSCArrayView<float>(2, DeviceDescriptor::CPUDevice());
+}
+
+BOOST_AUTO_TEST_CASE(CheckSparseCscDataBuffersInGpu)
+{
+    if (ShouldRunOnGpu())
+    {
+        TestSparseCSCDataBuffers<float>(1, DeviceDescriptor::GPUDevice(0));
+        TestSparseCSCDataBuffers<double>(5, DeviceDescriptor::GPUDevice(0));
+    }
+}
+
+BOOST_AUTO_TEST_CASE(CheckCscDataBuffersInCpu)
+{
+    if (ShouldRunOnCpu())
+        TestSparseCSCDataBuffers<float>(2, DeviceDescriptor::CPUDevice());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
