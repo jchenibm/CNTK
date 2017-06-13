@@ -112,8 +112,6 @@ void TestReadonliness(const NDArrayViewPtr aliasView, const NDArrayViewPtr dataV
 template <typename ElementType>
 void TestNDArrayView(size_t numAxes, const DeviceDescriptor& device)
 {
-    srand(1);
-
     size_t maxDimSize = 15;
     NDShape viewShape(numAxes);
     for (size_t i = 0; i < numAxes; ++i)
@@ -152,8 +150,6 @@ void TestNDArrayView(size_t numAxes, const DeviceDescriptor& device)
 template <typename ElementType>
 void TestSparseCSCArrayView(size_t numAxes, const DeviceDescriptor& device)
 {
-    srand(1);
-
     size_t maxDimSize = 15;
     NDShape viewShape(numAxes);
     for (size_t i = 0; i < numAxes; ++i)
@@ -190,8 +186,6 @@ void TestSparseCSCArrayView(size_t numAxes, const DeviceDescriptor& device)
 template <typename ElementType>
 void TestSparseCSCDataBuffers(size_t numAxes, const DeviceDescriptor& device)
 {
-    srand(1);
-
     size_t maxDimSize = 15;
     NDShape viewShape(numAxes);
     for (size_t i = 0; i < numAxes; ++i)
@@ -252,12 +246,21 @@ void TestSparseCSCDataBuffers(size_t numAxes, const DeviceDescriptor& device)
     }
 }
 
-BOOST_AUTO_TEST_SUITE(NDArrayViewSuite)
+
+struct NDArrayViewFixture
+{
+    NDArrayViewFixture()
+    {
+        srand(1);
+    }
+};
+
+BOOST_FIXTURE_TEST_SUITE(NDArrayViewSuite, NDArrayViewFixture)
 
 BOOST_AUTO_TEST_CASE(CheckFloatNDArrayViewInCpu)
 {
     if (ShouldRunOnCpu())
-        TestNDArrayView<float>(2, DeviceDescriptor::CPUDevice());
+        TestNDArrayView<float>(GenerateNumOfAxes(10), DeviceDescriptor::CPUDevice());
 }
 
 BOOST_AUTO_TEST_CASE(CheckNDArrayViewInGpu)
@@ -265,7 +268,7 @@ BOOST_AUTO_TEST_CASE(CheckNDArrayViewInGpu)
     if (ShouldRunOnGpu())
     {
         TestNDArrayView<float>(0, DeviceDescriptor::GPUDevice(0));
-        TestNDArrayView<double>(4, DeviceDescriptor::GPUDevice(0));
+        TestNDArrayView<double>(GenerateNumOfAxes(6), DeviceDescriptor::GPUDevice(0));
     }
 }
 
@@ -274,14 +277,17 @@ BOOST_AUTO_TEST_CASE(CheckCscArrayViewInGpu)
     if (ShouldRunOnGpu())
     {
         TestSparseCSCArrayView<float>(1, DeviceDescriptor::GPUDevice(0));
-        TestSparseCSCArrayView<double>(4, DeviceDescriptor::GPUDevice(0));
+        TestSparseCSCArrayView<double>(GenerateNumOfAxes(9), DeviceDescriptor::GPUDevice(0));
     }
 }
 
 BOOST_AUTO_TEST_CASE(CheckCscArrayViewInCpu)
 {
     if (ShouldRunOnCpu())
+    {
         TestSparseCSCArrayView<float>(2, DeviceDescriptor::CPUDevice());
+        TestSparseCSCArrayView<float>(GenerateNumOfAxes(15), DeviceDescriptor::CPUDevice());
+    }
 }
 
 BOOST_AUTO_TEST_CASE(CheckSparseCscDataBuffersInGpu)
@@ -289,7 +295,7 @@ BOOST_AUTO_TEST_CASE(CheckSparseCscDataBuffersInGpu)
     if (ShouldRunOnGpu())
     {
         TestSparseCSCDataBuffers<float>(1, DeviceDescriptor::GPUDevice(0));
-        TestSparseCSCDataBuffers<double>(5, DeviceDescriptor::GPUDevice(0));
+        TestSparseCSCDataBuffers<double>(GenerateNumOfAxes(7), DeviceDescriptor::GPUDevice(0));
     }
 }
 
@@ -298,7 +304,7 @@ BOOST_AUTO_TEST_CASE(CheckSparseCscDataBuffersInCpu)
     if (ShouldRunOnCpu())
     {
         TestSparseCSCDataBuffers<float>(2, DeviceDescriptor::CPUDevice());
-        TestSparseCSCDataBuffers<float>(6, DeviceDescriptor::CPUDevice());
+        TestSparseCSCDataBuffers<float>(GenerateNumOfAxes(16), DeviceDescriptor::CPUDevice());
     }
 }
 
