@@ -611,7 +611,7 @@ namespace CNTK
     }
 
     template <typename ElementType>
-    void CopyVariableValueToCSCSparse(size_t sequenceLength, std::vector<SparseIndexType> colStarts, std::vector<SparseIndexType> rowIndices, std::vector<ElementType> nonZeroValues, size_t& numNonZeroValues)
+    void Value::CopyVariableValueToCSCSparse(std::vector<SparseIndexType> colStarts, std::vector<SparseIndexType> rowIndices, std::vector<ElementType> nonZeroValues, size_t& numNonZeroValues)
     {
         // All sanity check has been done in ValidateSparseCSCAndGetIndexSizes().
         NDArrayViewPtr cpuArrayView;
@@ -633,7 +633,6 @@ namespace CNTK
         memcpy(colStarts.data(), rawColStarts, numNonZeroValues * sizeof(SparseIndexType));
         memcpy(rowIndices.data(), rawRowIndices, (sequenceLength + 1) * sizeof(SparseIndexType) )
     }
-
 
     template <typename ElementType>
     ElementType Value::AsScalar() const
