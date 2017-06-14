@@ -610,8 +610,8 @@ namespace CNTK
         SparseIndexType* rawColStarts;
         SparseIndexType* rawRowIndices;
 
-        size_t numNonZeroValues;
-        std::tie(rawNonZeroValues, rawColStarts, rawRowIndices, numNonZeroValues) = Data()->template SparseCSCDataBuffers<ElementType>();
+        size_t numNonZeroValues = 0;
+        // std::tie(rawNonZeroValues, rawColStarts, rawRowIndices, numNonZeroValues) = Data()->template SparseCSCDataBuffers<ElementType>();
         return std::pair(maxSequenceLen, numNonZeroValues);
     }
 
