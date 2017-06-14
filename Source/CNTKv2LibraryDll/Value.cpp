@@ -611,7 +611,7 @@ namespace CNTK
     }
 
     template <typename ElementType>
-    void Value::CopyVariableValueToCSCSparse(std::vector<SparseIndexType> colStarts, std::vector<SparseIndexType> rowIndices, std::vector<ElementType> nonZeroValues, size_t& numNonZeroValues)
+    void Value::CopyVariableValueToCSCSparse(size_t sequenceLength, std::vector<SparseIndexType> colStarts, std::vector<SparseIndexType> rowIndices, std::vector<ElementType> nonZeroValues, size_t& numNonZeroValues)
     {
         // All sanity check has been done in ValidateSparseCSCAndGetIndexSizes().
         NDArrayViewPtr cpuArrayView;
