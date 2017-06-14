@@ -606,7 +606,7 @@ namespace CNTK
         if (MaskedCount() != 0)
             RuntimeError("There should not be any masks for a Value containing only one single sequence.");
 
-        auto numNonZeroValues = std::get<3>(Data()->SparseCSCDataBuffers());
+        auto numNonZeroValues = std::get<3>(Data()->SparseCSCDataBuffers<ElementType>());
         return std::pair(maxSequenceLen, numNonZeroValues);
     }
 
@@ -627,7 +627,7 @@ namespace CNTK
         SparseIndexType* rawColStarts;
         SparseIndexType* rawRowIndices;
 
-        std::tie(rawNonZeroValues, rawColStarts, rawRowIndices, numNonZeroValues) = cpuArrayView->SparseCSCDataBuffers();
+        std::tie(rawNonZeroValues, rawColStarts, rawRowIndices, numNonZeroValues) = cpuArrayView->SparseCSCDataBuffers<ElementType>();
 
         memcpy(nonZeroValues.data(), rawNonZeroValues, numNonZeroValues * sizeof(ElementType));
         memcpy(colStarts.data(), rawColStarts, numNonZeroValues * sizeof(SparseIndexType));
