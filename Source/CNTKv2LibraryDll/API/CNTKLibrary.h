@@ -2722,16 +2722,19 @@ namespace CNTK
         }
 
         ///
-        /// Copy the data stored in the Value object to the buffers representing a sequence in CSC sparse format..
-        /// The sequence buffer will be resized if ncessary.
+        /// Copy the data stored in 'this' Value object to the buffers representing a sequence in CSC sparse format.
+        /// The sequence buffer will be resized if necessary.
         /// The Value should have the same tensor shape as outputVariable.
+        /// On return, the sequenceLength is set to the length of the sequence stored in 'this' Value,
+        /// and the colStarts, rowIndices and nonZeroValues contain the data of column indexes, row indexes and non-zero values,
+        /// and the numNonZeroValues is set to number of non-zero values contained in 'this' Value.
         ///
         template <typename ElementType>
         void CopyVariableValueTo(const Variable& outputVariable, size_t& sequenceLength, std::vector<SparseIndexType> colStarts, std::vector<SparseIndexType> rowIndices, std::vector<ElementType> nonZeroValues, size_t& numNonZeroValues)
         {
-            std::tie(sequenceLength, numNonZeroValues) = ValidateSparseCSCAndGetIndexBufferSizes(outputVariable);
+            std::tie(sequenceLength, numNonZeroValues) = ValidateSparseCSCAndGetIndexBufferSizes<ElementType>(outputVariable);
 
-            // resize output vectors.
+            // ( output vectors.
             colStarts.resize(sequenceLength + 1);
             rowIndices.resize(numNonZeroValues);
             nonZeroValues.resize(numNonZeroValues);
