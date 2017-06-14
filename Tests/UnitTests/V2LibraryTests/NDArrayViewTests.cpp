@@ -286,7 +286,7 @@ void TestDataBuffer(size_t numAxes, const DeviceDescriptor& device)
     }
 
     // Get DataBuffer for test.
-    auto dataBuffer = dataView->template DataBuffer<ElementType>();
+    const ElementType* dataBuffer = dataView->template DataBuffer<ElementType>();
 
     // Verify DataBuffer.
     if ((device.Type() == DeviceKind::CPU))
@@ -300,11 +300,11 @@ void TestDataBuffer(size_t numAxes, const DeviceDescriptor& device)
         auto dataViewFromOutput = MakeSharedObject<NDArrayView>(viewShape, dataBuffer, viewShape.TotalSize(), device);
         BOOST_TEST(AreEqual(dataViewFromOutput, dataView), "The NDArrayView created from DataBuffer on GPU does not match the source one.");
 
-        // Additional tests to copy it out to a dense matrix on the CPU and verify the data
-        std::vector<ElementType> copiedDenseData(viewShape.TotalSize());
-        NDArrayView denseCPUTensor(viewShape, copiedDenseData.data(), copiedDenseData.size(), DeviceDescriptor::CPUDevice());
-        denseCPUTensor.CopyFrom(*dataViewFromOutput);
-        BOOST_TEST(copiedDenseData == data, "The data in the copied NDArrayView does not match the source data.");
+        // Additional test: copy it out to a dense matrix on the CPU and verify the data
+        std::vector<ElementType> anotherDenseBuffer(viewShape.TotalSize());
+        NDArrayView denseCPUView(viewShape, anotherDenseBuffer.data(), anotherDenseBuffer.size(), DeviceDescriptor::CPUDevice());
+        denseCPUView.CopyFrom(*dataViewFromOutput);
+        BOOST_TEST(anotherDenseBuffer == data, "The data in the copied NDArrayView does not match the source data.");
     }
 }
 
