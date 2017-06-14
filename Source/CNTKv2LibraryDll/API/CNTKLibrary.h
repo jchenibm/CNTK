@@ -2785,10 +2785,10 @@ namespace CNTK
         CNTK_API std::pair<size_t, size_t> GetSequenceAndBatchLength(const Variable& outputVariable);
 
         template <typename ElementType>
-        std::pair<size_t, size_t> ValidateSparseCSCAndGetIndexBufferSizes(const Variable& outputVariable);
+        CNTK_API std::pair<size_t, size_t> ValidateSparseCSCAndGetIndexBufferSizes(const Variable& outputVariable);
 
         template <typename ElementType>
-        void CopyVariableValueToCSCSparse(const Variable& outputVaraible, size_t sequenceLength, std::vector<SparseIndexType> colStarts, std::vector<SparseIndexType> rowIndices, std::vector<ElementType> nonZeroValues, size_t& numNonZeroValues);
+        CNTK_API void CopyVariableValueToCSCSparse(const Variable& outputVaraible, size_t sequenceLength, std::vector<SparseIndexType> colStarts, std::vector<SparseIndexType> rowIndices, std::vector<ElementType> nonZeroValues, size_t& numNonZeroValues);
 
         CNTK_API static void GetSequenceStartsAndLengths(const NDMaskPtr& mask, std::vector<ptrdiff_t>& sequenceBeginIndices, std::vector<size_t>& sequenceLengths, size_t numDynamicAxes);
 
