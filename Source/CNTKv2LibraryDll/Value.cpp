@@ -614,30 +614,23 @@ namespace CNTK
     void Value::CopyVariableValueToCSCSparse(size_t sequenceLength, std::vector<SparseIndexType>& colStarts, std::vector<SparseIndexType>& rowIndices, std::vector<ElementType>& nonZeroValues, size_t& numNonZeroValues)
     {
         // All sanity check has been done in ValidateSparseCSCAndGetIndexSizes().
-        NDArrayViewPtr cpuArrayView;
+        NDArrayViewPtr cpuView;
         if (Device().Type() == DeviceKind::GPU)
         {
-            // Todo: GPUSparseMatrix to CPUSparseMatrix is not implemented in matrix, as a workaround we go through dense for now.
-            if (GetStorageFormat() == StorageFormat::SparseCSC)
-            {
-                cpuDenseArrayView = MakeSharedObject<NDArrayView>(GetDataType(), StorageFormat::Dense, Shape(), DeviceDescriptor::CPUDevice());
-                cpuDenseArrayView->CopyFrom(*Data());
-                cpuArrayView = MakeSharedObject<NDArrayView>(GetDataType(), GetStorageFormat(), Shape(), DeviceDescriptor::CPUDevice());
-                cpuArrayView->CopyFrom(*(cpuDenseArrayView->Data()));
-            }
-            else
-            {
-                cpuArrayView = MakeSharedObject<NDArrayView>(GetDataType(), GetStorageFormat(), Shape(), DeviceDescriptor::CPUDevice());
-                cpuArrayView->CopyFrom(*Data());
+            // Todo: GPUSparseMatrix to CPUSparseMatrix is not implemented in matrix, as a workaround the dense matrix is used as intermediate presentation.
+            auto cpuDenseView = MakeSharedObject<NDArrayView>(GetDataType(), StorageFormat::Dense, Shape(), DeviceDescriptor::CPUDevice());
+            cpuDenseView->CopyFrom(*Data());
+            cpuView = MakeSharedObject<NDArrayView>(GetDataType(), GetStorageFormat(), Shape(), DeviceDescriptor::CPUDevice());
+            cpuView->CopyFrom(*cpuDenseView);
         }
         else
-            cpuArrayView = Data();
+            cpuView = Data();
 
         const ElementType* rawNonZeroValues;
         const SparseIndexType* rawColStarts;
         const SparseIndexType* rawRowIndices;
 
-        std::tie(rawNonZeroValues, rawColStarts, rawRowIndices, numNonZeroValues) = cpuArrayView->SparseCSCDataBuffers<ElementType>();
+        std::tie(rawNonZeroValues, rawColStarts, rawRowIndices, numNonZeroValues) = cpuView->SparseCSCDataBuffers<ElementType>();
 
         memcpy(nonZeroValues.data(), rawNonZeroValues, numNonZeroValues * sizeof(ElementType));
         memcpy(colStarts.data(), rawColStarts, numNonZeroValues * sizeof(SparseIndexType));
