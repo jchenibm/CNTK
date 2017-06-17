@@ -593,7 +593,7 @@ namespace CNTK
                 outputVariable.AsString().c_str(), varShape.AsString().c_str());
 
         if (!outputVariable.IsSparse())
-            InvalidArgument("The outputVariable '%S' must be in the sparse format.");
+            InvalidArgument("The outputVariable '%S' must be in the sparse format.", outputVariable.AsString().c_str());
 
         size_t numOfSequences;
         size_t maxSequenceLen;
