@@ -611,21 +611,21 @@ namespace CNTK
     }
 
     template <typename ElementType>
-    void Value::CopyVariableValueToCSCSparse(size_t sequenceLength, std::vector<SparseIndexType> colStarts, std::vector<SparseIndexType> rowIndices, std::vector<ElementType> nonZeroValues, size_t& numNonZeroValues)
+    void Value::CopyVariableValueToCSCSparse(size_t sequenceLength, std::vector<SparseIndexType>& colStarts, std::vector<SparseIndexType>& rowIndices, std::vector<ElementType>& nonZeroValues, size_t& numNonZeroValues)
     {
         // All sanity check has been done in ValidateSparseCSCAndGetIndexSizes().
         NDArrayViewPtr cpuArrayView;
         if (Device().Type() == DeviceKind::GPU)
         {
-            cpuArrayView = MakeSharedObject<NDArrayView>(GetDataType(), Shape(), GetStorageFormat(), DeviceDescriptor::CPUDevice());
+            cpuArrayView = MakeSharedObject<NDArrayView>(GetDataType(), GetStorageFormat(), Shape(), DeviceDescriptor::CPUDevice());
             cpuArrayView->CopyFrom(*Data());
         }
         else
             cpuArrayView = Data();
 
-        ElementType* rawNonZeroValues;
-        SparseIndexType* rawColStarts;
-        SparseIndexType* rawRowIndices;
+        const ElementType* rawNonZeroValues;
+        const SparseIndexType* rawColStarts;
+        const SparseIndexType* rawRowIndices;
 
         std::tie(rawNonZeroValues, rawColStarts, rawRowIndices, numNonZeroValues) = cpuArrayView->SparseCSCDataBuffers<ElementType>();
 
@@ -761,6 +761,10 @@ namespace CNTK
     template CNTK_API void Value::CopyVariableValueToVector<double>(const Variable& outputVariable, std::vector<std::vector<double>>& sequences);
     template CNTK_API void Value::CopyVariableValueToVector<float>(const Variable& outputVariable, std::vector<std::vector<size_t>>& sequences);
     template CNTK_API void Value::CopyVariableValueToVector<double>(const Variable& outputVariable, std::vector<std::vector<size_t>>& sequences);
+    template CNTK_API std::pair<size_t, size_t> Value::ValidateSparseCSCAndGetIndexBufferSizes<float>(const Variable& outputVariable);
+    template CNTK_API std::pair<size_t, size_t> Value::ValidateSparseCSCAndGetIndexBufferSizes<double>(const Variable& outputVariable);
+    template CNTK_API void Value::CopyVariableValueToCSCSparse<float>(size_t sequenceLength, std::vector<SparseIndexType>& colStarts, std::vector<SparseIndexType>& rowIndices, std::vector<float>& nonZeroValues, size_t& numNonZeroValues);
+    template CNTK_API void Value::CopyVariableValueToCSCSparse<double>(size_t sequenceLength, std::vector<SparseIndexType>& colStarts, std::vector<SparseIndexType>& rowIndices, std::vector<double>& nonZeroValues, size_t& numNonZeroValues);
     template float Value::AsScalar<float>() const;
     template double Value::AsScalar<double>() const;
 }
