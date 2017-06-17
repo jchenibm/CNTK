@@ -354,7 +354,7 @@ void CheckCopyToOutput(const std::vector<std::vector<ElementType>>& expected, co
 }
 
 template <typename ElementType>
-Variable CreateVariable(NDShape shape, int numOfDynamicAxes)
+Variable CreateVariable(NDShape shape, int numOfDynamicAxes, bool isSparse = false)
 {
     std::vector<Axis> dynamicAxes;
 
@@ -372,9 +372,9 @@ Variable CreateVariable(NDShape shape, int numOfDynamicAxes)
     default:
         RuntimeError("No more than 2 dynamic axes is allowed.");
     }
-    
+
     Variable sampleVariable(shape, VariableKind::Output, AsDataType<ElementType>(), nullptr, false,
-        dynamicAxes, false /*bool isSparse*/, L"sampleVariable", L"sampleVariableUid");
+        dynamicAxes, isSparse, L"sampleVariable", L"sampleVariableUid");
 
     return sampleVariable;
 }
@@ -653,7 +653,8 @@ void ValueCopyToSparseCSCTest(const DeviceDescriptor& device)
     std::uniform_int_distribution<size_t> dimSizeDistribution(1, maxDimSize);
     size_t maxSequenceLen = 150;
     size_t dimSize;
-    ValuePtr sparseValue, denseValue;
+    ValuePtr sparseValue;
+    Variable sampleVariable;
     NDShape sampleShape;
     std::vector<ElementType> referenceDenseData;
 
@@ -661,23 +662,23 @@ void ValueCopyToSparseCSCTest(const DeviceDescriptor& device)
 
     // Check single sample.
     // No dynamic axis for the sampleVariable.
-    auto sampleVariable = CreateVariable<ElementType>(sampleShape, 0);
     dimSize = dimSizeDistribution(dimSizeGenerator);
     sampleShape = NDShape {dimSize};
     expected.m_seqLen = 1;
     std::tie(referenceDenseData, expected.m_colsStarts, expected.m_rowIndices, expected.m_nonZeroValues, expected.m_numNonZeroValues) = GenerateSequenceInCSC<ElementType>(dimSize, expected.m_seqLen);
     sparseValue = Value::CreateSequence<ElementType>(sampleShape, expected.m_seqLen, expected.m_colsStarts.data(), expected.m_rowIndices.data(), expected.m_nonZeroValues.data(), expected.m_numNonZeroValues, device);
 
+    sampleVariable = CreateVariable<ElementType>(sampleShape, 0, true /* isSparse */);
     sparseValue->CopyVariableValueTo<ElementType>(sampleVariable, output.m_seqLen, output.m_colsStarts, output.m_rowIndices, output.m_nonZeroValues, output.m_numNonZeroValues);
     BOOST_TEST(AreEqualCSCBuffers(expected, output), "Single sample: the output data does not match expected.");
 
     // 1 dynamic axis (as batch) for the sampleVariable
-    sampleVariable = CreateVariable<ElementType>(sampleShape, 1);
+    sampleVariable = CreateVariable<ElementType>(sampleShape, 1, true /* isSparse */);
     sparseValue->CopyVariableValueTo<ElementType>(sampleVariable, output.m_seqLen, output.m_colsStarts, output.m_rowIndices, output.m_nonZeroValues, output.m_numNonZeroValues);
     BOOST_TEST(AreEqualCSCBuffers(expected, output), "Single sample with batch axis: the output data does not match expected.");
 
     // 2 dynamic axes for the sampleVariable
-    sampleVariable = CreateVariable<ElementType>(sampleShape, 2);
+    sampleVariable = CreateVariable<ElementType>(sampleShape, 2, true /* isSparse */);
     sparseValue->CopyVariableValueTo<ElementType>(sampleVariable, output.m_seqLen, output.m_colsStarts, output.m_rowIndices, output.m_nonZeroValues, output.m_numNonZeroValues);
     BOOST_TEST(AreEqualCSCBuffers(expected, output), "Single sample with batch and sequence axis: the output data does not match expected.");
 
@@ -692,7 +693,7 @@ void ValueCopyToSparseCSCTest(const DeviceDescriptor& device)
         std::tie(referenceDenseData, expected.m_colsStarts, expected.m_rowIndices, expected.m_nonZeroValues, expected.m_numNonZeroValues) = GenerateSequenceInCSC<ElementType>(dimSize, expected.m_seqLen);
         sparseValue = Value::CreateSequence<ElementType>(sampleShape, expected.m_seqLen, expected.m_colsStarts.data(), expected.m_rowIndices.data(), expected.m_nonZeroValues.data(), expected.m_numNonZeroValues, device, true /* readOnly */);
 
-        sampleVariable = CreateVariable<ElementType>(sampleShape, 2);
+        sampleVariable = CreateVariable<ElementType>(sampleShape, 2, true /* isSparse */);
         sparseValue->CopyVariableValueTo<ElementType>(sampleVariable, output.m_seqLen, output.m_colsStarts, output.m_rowIndices, output.m_nonZeroValues, output.m_numNonZeroValues);
         BOOST_TEST(AreEqualCSCBuffers(expected, output), "The output data does not match expected.");
 
@@ -700,7 +701,7 @@ void ValueCopyToSparseCSCTest(const DeviceDescriptor& device)
         auto seqStartFlag = static_cast<int>(rand()) % 2 == 0 ? true : false;
         sparseValue = Value::CreateSequence<ElementType>(sampleShape, expected.m_seqLen, expected.m_colsStarts.data(), expected.m_rowIndices.data(), expected.m_nonZeroValues.data(), expected.m_numNonZeroValues, seqStartFlag, device, false /*readOnly */);
 
-        sampleVariable = CreateVariable<ElementType>(sampleShape, 2);
+        sampleVariable = CreateVariable<ElementType>(sampleShape, 2, true /* isSparse */);
         sparseValue->CopyVariableValueTo<ElementType>(sampleVariable, output.m_seqLen, output.m_colsStarts, output.m_rowIndices, output.m_nonZeroValues, output.m_numNonZeroValues);
         BOOST_TEST(AreEqualCSCBuffers(expected, output), "The output data does not match expected.");
     }
@@ -712,11 +713,11 @@ void ValueCopyToSparseCSCTest(const DeviceDescriptor& device)
     std::tie(referenceDenseData, expected.m_colsStarts, expected.m_rowIndices, expected.m_nonZeroValues, expected.m_numNonZeroValues) = GenerateSequenceInCSC<ElementType>(dimSize, expected.m_seqLen * dimSize);
     sparseValue = Value::CreateSequence<ElementType>(sampleShape, expected.m_seqLen, expected.m_colsStarts.data(), expected.m_rowIndices.data(), expected.m_nonZeroValues.data(), expected.m_numNonZeroValues, device);
 
-    sampleVariable = CreateVariable<ElementType>(sampleShape, 2);
+    sampleVariable = CreateVariable<ElementType>(sampleShape, 2, true /* isSparse */);
     sparseValue->CopyVariableValueTo<ElementType>(sampleVariable, output.m_seqLen, output.m_colsStarts, output.m_rowIndices, output.m_nonZeroValues, output.m_numNonZeroValues);
     BOOST_TEST(AreEqualCSCBuffers(expected, output), "N-Dimensional shape: the output data does not match expected.");
 
-    // exception test: multiple sequences
+    // exception test: multiple sequences; dense format
 }
 
 void ValueCopyToExceptionsTest(const DeviceDescriptor& device)

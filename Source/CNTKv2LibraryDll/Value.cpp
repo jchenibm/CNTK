@@ -617,8 +617,18 @@ namespace CNTK
         NDArrayViewPtr cpuArrayView;
         if (Device().Type() == DeviceKind::GPU)
         {
-            cpuArrayView = MakeSharedObject<NDArrayView>(GetDataType(), GetStorageFormat(), Shape(), DeviceDescriptor::CPUDevice());
-            cpuArrayView->CopyFrom(*Data());
+            // Todo: GPUSparseMatrix to CPUSparseMatrix is not implemented in matrix, as a workaround we go through dense for now.
+            if (GetStorageFormat() == StorageFormat::SparseCSC)
+            {
+                cpuDenseArrayView = MakeSharedObject<NDArrayView>(GetDataType(), StorageFormat::Dense, Shape(), DeviceDescriptor::CPUDevice());
+                cpuDenseArrayView->CopyFrom(*Data());
+                cpuArrayView = MakeSharedObject<NDArrayView>(GetDataType(), GetStorageFormat(), Shape(), DeviceDescriptor::CPUDevice());
+                cpuArrayView->CopyFrom(*(cpuDenseArrayView->Data()));
+            }
+            else
+            {
+                cpuArrayView = MakeSharedObject<NDArrayView>(GetDataType(), GetStorageFormat(), Shape(), DeviceDescriptor::CPUDevice());
+                cpuArrayView->CopyFrom(*Data());
         }
         else
             cpuArrayView = Data();
