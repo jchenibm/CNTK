@@ -634,7 +634,8 @@ namespace CNTK
 
         memcpy(nonZeroValues.data(), rawNonZeroValues, numNonZeroValues * sizeof(ElementType));
         memcpy(colStarts.data(), rawColStarts, numNonZeroValues * sizeof(SparseIndexType));
-        memcpy(rowIndices.data(), rawRowIndices, (sequenceLength + 1) * sizeof(SparseIndexType));
+        auto numOfRowsInMatrix = GetMatrixDimensions(cpuView->Shape()).first + 1;
+        memcpy(rowIndices.data(), rawRowIndices, numOfRowsInMatrix * sizeof(SparseIndexType));
     }
 
     template <typename ElementType>
