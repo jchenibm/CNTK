@@ -619,6 +619,7 @@ namespace CNTK
         if (Device().Type() == DeviceKind::GPU)
         {
             // Todo: GPUSparseMatrix to CPUSparseMatrix is not implemented in matrix, as a workaround the dense matrix is used as intermediate presentation.
+            // However, it is possible that data value very close to 0 could treated as 0 after transformation between dense and sparse.
             auto cpuDenseView = MakeSharedObject<NDArrayView>(GetDataType(), StorageFormat::Dense, Shape(), DeviceDescriptor::CPUDevice());
             cpuDenseView->CopyFrom(*Data());
             cpuView = MakeSharedObject<NDArrayView>(GetDataType(), GetStorageFormat(), Shape(), DeviceDescriptor::CPUDevice());
